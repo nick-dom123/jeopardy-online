@@ -181,8 +181,8 @@
     background: #1a1a1a; padding: 4rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); max-width: 800px; width: 90%; text-align: center; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
   }
   .clue-value { color: #eab308; font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
-  .clue-text { font-size: 3rem; font-weight: 700; line-height: 1.3; margin-bottom: 3rem; }
-  .question-text { font-size: 2rem; color: #4ade80; display: none; margin-bottom: 3rem; font-style: italic; }
+  .clue-text { font-size: 2.2rem; font-weight: 700; line-height: 1.3; margin-bottom: 2rem; }
+  .question-text { font-size: 1.8rem; color: #4ade80; display: none; margin-bottom: 2rem; font-style: italic; }
   .modal-actions { display: flex; justify-content: center; gap: 1rem; }
   
   .close-modal { position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; opacity: 0.5; }
@@ -271,7 +271,6 @@
     
     <div class="modal-actions">
       <button class="btn" id="reveal-btn" onclick="revealQuestion()">Reveal Answer</button>
-      <!-- Clear Buzzers Button -->
       <button class="btn btn-outline" id="clear-buzzer-btn" style="display: none; border-color: #f87171; color: #f87171;" onclick="clearBuzzers()">Clear Buzzers</button>
       <button class="btn btn-outline" onclick="closeClue()">Close</button>
     </div>
@@ -289,8 +288,7 @@
 
   const state = {
     groups: [
-      { id: 'g1', name: 'Group 1' },
-      { id: 'g2', name: 'Group 2' }
+      { id: 'g1', name: 'Group 1' }
     ],
     players: [],
     activeGroupId: null,
@@ -299,16 +297,132 @@
     currentTile: null
   };
 
-  const categories = ["Science", "History", "Pop Culture", "Geography", "Wildcard"];
+  const boardsData = [
+    {
+      boardNumber: 1,
+      title: "Board 1 (100 - 500)",
+      categories: [
+        {
+          name: "WORDS THAT END IN ‘ASM’",
+          clues: [
+            { val: 100, clue: "This 6-letter word is defined as a climax or peak of intense physical excitement.", answer: "Orgasm" },
+            { val: 200, clue: "Watch out for a sudden, involuntary contraction of a muscle with this short 5-letter term.", answer: "Spasm" },
+            { val: 300, clue: "Often called the lowest form of wit, this linguistic style uses sharp irony to mock or convey contempt.", answer: "Sarcasm" },
+            { val: 400, clue: "This 10-letter word for intense passion or eager interest originally referred to being inspired by a divine force.", answer: "Enthusiasm" },
+            { val: 500, clue: "This thick, jelly-like substance fills a cell, surrounding the nucleus and holding all of the internal organelles in place.", answer: "Cytoplasm" }
+          ]
+        },
+        {
+          name: "JUNKIE CORE",
+          clues: [
+            { val: 100, clue: "Extracted from the leaves of a South American shrub, this powerful stimulant was infamously included in the original 19th-century recipe for Coca-Cola.", answer: "Cocaine" },
+            { val: 200, clue: "Accidentally discovered by chemist Albert Hofmann in 1938, this powerful psychedelic is commonly known by its three-letter chemical abbreviation.", answer: "LSD" },
+            { val: 300, clue: "Originally created as a fast-acting surgical anesthetic, this dissociative drug is also known on the street by its letter-heavy nickname", answer: "Ketamine" },
+            { val: 400, clue: "First synthesized in Germany in 1897 and briefly marketed as a non-addictive cough medicine, this potent opioid is a derivative of morphine.", answer: "Heroin" },
+            { val: 500, clue: "This highly addictive synthetic stimulant saw widespread military use during World War II to combat fatigue", answer: "Methamphetamines, Speed" }
+          ]
+        },
+        {
+          name: "ANAGRAM",
+          clues: [
+            { val: 100, clue: "Rearrange the letters of the word \"SILENT\" to find this action you should do when someone else is speaking.", answer: "Listen" },
+            { val: 200, clue: "If you move the letters around in the word \"DANGER\", you'll find a plot of land where you grow flowers and vegetables.", answer: "Garden" },
+            { val: 300, clue: "This title for a scientist who studies the cosmos is a letter-for-letter anagram of \"MOON STARER\".", answer: "Astronomer" },
+            { val: 400, clue: "The answer to this question uses the same letters and ALSO equals the same as \"ELEVEN PLUS TWO\".", answer: "Twelve plus One" },
+            { val: 500, clue: "In Harry Potter and the Chamber of Secrets, rearranging the letters of \"TOM MARVOLO RIDDLE\" is what that character says in the movie", answer: "I am Lord Voldemort" }
+          ]
+        },
+        {
+          name: "MODERN HISTORY",
+          clues: [
+            { val: 100, clue: "In July 1969, astronaut Neil Armstrong made history by broadcasting his famous words after stepping onto this celestial body.", answer: "Moon" },
+            { val: 200, clue: "On December 25, 1991, the red hammer-and-sickle flag was lowered from the Kremlin for the final time, marking the official dissolution of this superpower.", answer: "USSR, Soviet Union" },
+            { val: 300, clue: "During the August 1963 March on Washington, this civil rights leader delivered his iconic \"I Have a Dream\" speech from the steps of the Lincoln Memorial.", answer: "Martin Luther King Jr" },
+            { val: 400, clue: "This concrete and barbed-wire barrier that divided a major capital city for nearly three decades was famously breached and torn down in November 1989 somewhere in Europe.", answer: "Berlin Wall" },
+            { val: 500, clue: "Codenamed \"Trinity,\" the world's first nuclear weapon test was successfully detonated in July 1945 in the desert of this U.S. state.", answer: "New Mexico" }
+          ]
+        },
+        {
+          name: "CUISINE GEOGRAPHY",
+          clues: [
+            { val: 100, clue: "This microfoam-topped espresso beverage known as the flat white was pioneered in cafes in this country during the 1980s.", answer: "Australia" },
+            { val: 200, clue: "Chicken tikka masala was actually invented and popularized in the restaurants of this country.", answer: "United Kingdom, Scotland" },
+            { val: 300, clue: "The Caesar salad was invented in 1924 by a restaurant owner in this western country", answer: "Mexico" },
+            { val: 400, clue: "This flaky pastry known as the croissant is actually named the kipferl of this European country.", answer: "Austria" },
+            { val: 500, clue: "A beloved symbol of Scandinavian cooking, Swedish meatballs trace their historical recipe roots back to King Charles XII, who brought the culinary technique home from the Ottoman Empire in this modern-day country.", answer: "Turkey" }
+          ]
+        }
+      ]
+    },
+    {
+      boardNumber: 2,
+      title: "Board 2 (200 - 1000)",
+      categories: [
+        {
+          name: "AA MEETING",
+          clues: [
+            { val: 200, clue: "Primarily made by fermenting crushed grapes, this popular alcoholic beverage includes major red varieties like Merlot and Pinot Noir.", answer: "Wine" },
+            { val: 400, clue: "Often referred to as \"rice wine,\" this traditional alcoholic beverage is actually brewed using a unique process involving fermented rice, water, and a specific mold called koji.", answer: "Sake" },
+            { val: 600, clue: "What are the main ingredients for a classic Margarita", answer: "Tequila, triple sec (or Cointreau), and lime juice" },
+            { val: 800, clue: "This spirit is nicknamed the green fairy", answer: "Absinthe" },
+            { val: 1000, clue: "To legally be classified as true bourbon in the United States, a whiskey must be made from a grain mash that is at least this percentage corn.", answer: "51%" }
+          ]
+        },
+        {
+          name: "CUDDLY CREATURES",
+          clues: [
+            { val: 200, clue: "Looking like a giant, soft white stuffed animal roaming the Arctic, this massive apex predator is definitely not built for a hug.", answer: "Polar Bear" },
+            { val: 400, clue: "This industrious, chubby swimmer looks like a friendly nature-builder, but it packs massive, self-sharpening orange incisors built to chew through solid timber.", answer: "Beaver" },
+            { val: 600, clue: "Looking like a fuzzy little puppy from a distance, this fierce marsupial is famous for its terrifying screeches and a bite force that can easily crush bone.", answer: "Tasmanian Devil" },
+            { val: 800, clue: "Resembling a massive, soft plush toy, if you were to shave off this animals fur, the exact same stripe pattern is printed directly onto its skin underneath.", answer: "Tiger" },
+            { val: 1000, clue: "Native to the high, arid steppes of Central Asia, this famously flat-faced feline boasts the densest fur of any cat species, giving it the deceptive appearance of a fluffy decorative pillow", answer: "Pallas's Cat" }
+          ]
+        },
+        {
+          name: "CENTRAL COAST SUBURBS",
+          clues: [
+            { val: 200, clue: "This suburb very recently had a shooting.", answer: "Berkley Vale" },
+            { val: 400, clue: "I personally spent most of my childhood growing up in this suburb", answer: "Wyoming" },
+            { val: 600, clue: "This coastal suburb is known for its famous golf course and that's it", answer: "Magenta Shores" },
+            { val: 800, clue: "This suburb is home to the 'Rams' soccer team with a Green and White striped Jersey.", answer: "East Gosford" },
+            { val: 1000, clue: "Based on data from the NSW Bureau of Crime Statistics and Research (BOCSAR), These 2 suburbs consistently record the highest per-capita crime rates on the Central Coast", answer: "Wyong, Tuggerah" }
+          ]
+        },
+        {
+          name: "MEDICAL TERMS",
+          clues: [
+            { val: 200, clue: "This common medical suffix attached to the end of a word meaning inflammation", answer: "-itis" },
+            { val: 400, clue: "Meaning \"I shall please\" in Latin, this term refers to a harmless, inactive substance given to a patient to test psychological effects or as a mock treatment.", answer: "Placebo" },
+            { val: 600, clue: "Derived from the Greek word for fox (due to the way foxes shed their fur in patches), this medical term refers to significant hair loss from the head or body.", answer: "Alopecia" },
+            { val: 800, clue: "This common diagnostic procedure involves extracting a small sample of living tissue from the body so it can be examined under a microscope for signs of disease.", answer: "Biopsy" },
+            { val: 1000, clue: "Derived from Greek roots meaning \"fast\" and \"heart,\" this clinical term describes a resting heart rate that is abnormally high, typically exceeding 100 beats per minute.", answer: "Tachycardia" }
+          ]
+        },
+        {
+          name: "WHO KNOWS NICK BETTER",
+          clues: [
+            { val: 200, clue: "When is my birthday?", answer: "24th of May 2003" },
+            { val: 400, clue: "What is the most recent Video Game that I played", answer: "Roblox" },
+            { val: 600, clue: "What is my sisters name?", answer: "Tiarna" },
+            { val: 800, clue: "When I was younger, what did I want to be when I grew up", answer: "Marine Biologist" },
+            { val: 1000, clue: "How many cars have I owned", answer: "10" }
+          ]
+        }
+      ]
+    }
+  ];
   
   function init() {
     renderTabs();
+    if(state.groups.length > 0) {
+      startGame(state.groups[0].id);
+    }
   }
 
   function renderTabs() {
     const nav = document.getElementById('main-nav');
     nav.innerHTML = state.groups.map(g => 
-      `<button class="tab" onclick="startGame('${g.id}')">${g.name}</button>`
+      `<button class="tab active" onclick="startGame('${g.id}')">${g.name}</button>`
     ).join('');
   }
 
@@ -405,7 +519,7 @@
     state.activeBoard = 1;
     state.playedTiles.clear();
     
-    document.getElementById('game-title').innerText = state.groups.find(g => g.id === groupId).name;
+    document.getElementById('game-title').innerText = "Jeopardy Game Night";
     updateBoardUI();
     switchView('game');
   }
@@ -433,28 +547,29 @@
   }
 
   function updateBoardUI() {
-    document.getElementById('game-subtitle').innerText = `Board ${state.activeBoard} (${state.activeBoard === 1 ? '100 - 500' : '200 - 1000'})`;
+    const currentBoard = boardsData[state.activeBoard - 1];
+    document.getElementById('game-subtitle').innerText = currentBoard.title;
     document.getElementById('next-board-btn').innerText = state.activeBoard === 1 ? 'Next Board' : 'End Game';
     
     const grid = document.getElementById('jeopardy-grid');
     grid.innerHTML = '';
 
-    categories.forEach(cat => {
-      grid.innerHTML += `<div class="category-header">${cat}</div>`;
+    currentBoard.categories.forEach(cat => {
+      grid.innerHTML += `<div class="category-header">${cat.name}</div>`;
     });
 
-    const multiplier = state.activeBoard === 1 ? 100 : 200;
-    for (let row = 1; row <= 5; row++) {
+    for (let row = 0; row < 5; row++) {
       for (let col = 0; col < 5; col++) {
-        const val = row * multiplier;
-        const tileId = `b${state.activeBoard}-r${row}-c${col}`;
+        const cat = currentBoard.categories[col];
+        const clueObj = cat.clues[row];
+        const tileId = `b${state.activeBoard}-r${row+1}-c${col}`;
         const isPlayed = state.playedTiles.has(tileId);
         
         grid.innerHTML += `
           <div class="tile ${isPlayed ? 'played' : ''}" 
                id="${tileId}" 
-               onclick="!this.classList.contains('played') && openClue('${tileId}', ${val}, '${categories[col]}')">
-            $${val}
+               onclick="!this.classList.contains('played') && openClue('${tileId}', ${col}, ${row})">
+            $${clueObj.val}
           </div>
         `;
       }
@@ -462,11 +577,16 @@
     renderScoreboard();
   }
 
-  function openClue(tileId, val, category) {
-    state.currentTile = { id: tileId, val };
+  function openClue(tileId, colIndex, rowIndex) {
+    const currentBoard = boardsData[state.activeBoard - 1];
+    const cat = currentBoard.categories[colIndex];
+    const clueObj = cat.clues[rowIndex];
     
-    document.getElementById('modal-val').innerText = `${category} - $${val}`;
-    document.getElementById('modal-clue').innerText = `Placeholder Answer for ${category} for $${val}.`;
+    state.currentTile = { id: tileId, val: clueObj.val };
+    
+    document.getElementById('modal-val').innerText = `${cat.name} - $${clueObj.val}`;
+    document.getElementById('modal-clue').innerText = clueObj.clue;
+    document.getElementById('modal-question').innerText = `Answer: (${clueObj.answer})`;
     
     document.getElementById('modal-question').style.display = 'none';
     document.getElementById('reveal-btn').style.display = 'inline-block';
@@ -482,9 +602,8 @@
   function revealQuestion() {
     document.getElementById('modal-question').style.display = 'block';
     document.getElementById('modal-question').style.color = '#4ade80';
-    document.getElementById('modal-question').innerText = `What is the Placeholder Question?`;
     document.getElementById('reveal-btn').style.display = 'none';
-    document.getElementById('clear-buzzer-btn').style.display = 'none'; // Hide clear button when answer is revealed
+    document.getElementById('clear-buzzer-btn').style.display = 'none';
   }
 
   function closeClue() {
