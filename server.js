@@ -4,8 +4,16 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
 
-// Uses absolute pathing so the server always finds the public folder
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Explicit routes for the HTML files
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/player.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'player.html'));
+});
 
 let players = [];
 let buzzerLocked = false;
@@ -38,7 +46,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Uses Render's dynamic port assignment
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
   console.log(`Game running on port ${PORT}`);
