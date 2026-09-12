@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Player Buzzer</title>
+<style>
+  :root {
+    --bg-dark: #121212;
+    --text-main: #ffffff;
+    --text-muted: #a0a0a0;
+  }
+
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    overscroll-behavior-y: none;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    bottom: -20vh;
+    left: -10vw;
+    width: 120vw;
+    height: 80vh;
+    background: radial-gradient(ellipse at bottom, rgba(59, 130, 246, 0.4) 0%, rgba(236, 72, 153, 0.2) 40%, transparent 70%);
+    z-index: -1;
+    pointer-events: none;
+    filter: blur(50px);
+  }
+
+  .view {
+    display: none;
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .view.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* --- View 1: Character Selection --- */
+  .select-header {
+    text-align: center;
+    padding: 3rem 1rem 1.5rem;
+  }
+  .select-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+  .select-header p { color: var(--text-muted); }
+
+  .character-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+
+  .char-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .char-btn:active { background: rgba(255, 255, 255, 0.15); }
+
+  /* --- View 2: Buzzer & Score --- */
+  .buzzer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+  }
+
+  .player-info { display: flex; flex-direction: column; gap: 0.25rem; }
+  .player-name-display { font-size: 1.25rem; font-weight: 700; }
+  .player-role { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  
+  .score-display { text-align: right; }
+  .score-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .score-value { font-size: 2rem; font-weight: 800; color: #eab308; }
+
+  .buzzer-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    position: relative;
+  }
+
+  /* Liquid Glass Interface Buzzer */
+  .buzzer {
+    width: 100%;
+    max-width: 350px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    
+    /* Glassmorphism styling */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(25px) saturate(150%);
+    -webkit-backdrop-filter: blur(25px) saturate(150%);
+    
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      inset 0 -10px 20px rgba(0, 0, 0, 0.1);
+      
+    color: white;
+    font-size: 3rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    touch-action: manipulation;
+  }
+
+  .buzzer:active:not(.locked):not(.buzzed) {
+    transform: scale(0.92);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 100%);
+    box-shadow: 
+      0 10px 20px rgba(0, 0, 0, 0.3),
+      inset 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Success State (You buzzed first) */
+  .buzzer.buzzed {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.4) 0%, rgba(22, 163, 74, 0.1) 100%);
+    border-color: rgba(74, 222, 128, 0.6);
+    box-shadow: 
+      0 20px 40px rgba(74, 222, 128, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      inset 0 -10px 20px rgba(0, 0, 0, 0.2);
+    transform: scale(0.98);
+  }
+
+  /* Locked State (Someone else buzzed first) */
+  .buzzer.locked {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.4) 0%, rgba(220, 38, 38, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 
+      0 20px 40px rgba(239, 68, 68, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      inset 0 -10px 20px rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.7);
+    animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+    40%, 60% { transform: translate3d(8px, 0, 0); }
+  }
+
+  /* Dev testing button (Remove in production) */
+  .dev-tools {
+    position: absolute;
+    bottom: 2rem;
+    opacity: 0.3;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+  <!-- View 1: Select Character -->
+  <div id="view-select" class="view active">
+    <div class="select-header">
+      <h1>Join Game</h1>
+      <p>Select your assigned character</p>
+    </div>
+    <div class="character-grid" id="character-grid"></div>
+  </div>
+
+  <!-- View 2: Buzzer & Score -->
+  <div id="view-buzzer" class="view">
+    <div class="buzzer-header">
+      <div class="player-info">
+        <span class="player-role">Player</span>
+        <span class="player-name-display" id="display-name">Name</span>
+      </div>
+      <div class="score-display">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="display-score">0</div>
+      </div>
+    </div>
+    
+    <div class="buzzer-container">
+      <div class="buzzer" id="main-buzzer" ontouchstart="handleBuzz(event)" onmousedown="handleBuzz(event)">
+        BUZZ
+      </div>
+      
+      <!-- Test button to simulate someone else buzzing -->
+      <div class="dev-tools" onclick="simulateOpponentBuzz()">Simulate Opponent Buzz</div>
+    </div>
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  // Variables to hold our game state
+  let availableCharacters = [];
+  let currentPlayer = null;
+  let isLocked = false;
+  let hasBuzzed = false;
+
+  // 1. Listen for the player list coming from the Host/Server
+  socket.on('update_players', (serverPlayers) => {
+    availableCharacters = serverPlayers;
+    
+    // 1. Rebuild the character selection buttons
+    const grid = document.getElementById('character-grid');
+    if (grid) {
+      grid.innerHTML = availableCharacters.map(char => 
+        `<div class="char-btn" onclick="selectCharacter('${char.id}')">${char.name}</div>`
+      ).join('');
+    }
+    
+    // 2. LIVE SCORE UPDATE LOGIC
+    if (currentPlayer) {
+      const updatedMe = availableCharacters.find(c => c.id === currentPlayer.id);
+      if (updatedMe) {
+        currentPlayer = updatedMe; 
+        document.getElementById('display-score').innerText = currentPlayer.score;
+      }
+    }
+  });
+
+  // 2. Select a character
+  function selectCharacter(id) {
+    currentPlayer = availableCharacters.find(c => c.id === id);
+    document.getElementById('display-name').innerText = currentPlayer.name;
+    document.getElementById('display-score').innerText = currentPlayer.score;
+    
+    // Switch to buzzer screen
+    document.getElementById('view-select').classList.remove('active');
+    document.getElementById('view-buzzer').classList.add('active');
+  }
+
+  // 3. Press the buzzer
+  function handleBuzz(e) {
+    e.preventDefault(); 
+    if (isLocked || hasBuzzed) return; 
+
+    // Add a little vibration for phones
+    if (navigator.vibrate) navigator.vibrate(50);
+    
+    // Send the buzz signal instantly to the server!
+    socket.emit('buzz', currentPlayer.id); 
+  }
+
+  // 4. Server announces who buzzed first
+  socket.on('buzzer_winner', (winnerId) => {
+    if (winnerId === currentPlayer.id) {
+      // We won the race! Make it green.
+      hasBuzzed = true;
+      const buzzer = document.getElementById('main-buzzer');
+      buzzer.classList.add('buzzed');
+      buzzer.innerText = "BUZZED!";
+    } else {
+      // Someone else won! Lock us out.
+      lockBuzzer();
+    }
+  });
+
+  // 5. Lock out functionality (Red screen)
+  function lockBuzzer() {
+    if (hasBuzzed) return; 
+    
+    isLocked = true;
+    const buzzer = document.getElementById('main-buzzer');
+    
+    // Error vibration pattern
+    if (navigator.vibrate) navigator.vibrate([50, 50, 50]); 
+
+    buzzer.classList.add('locked');
+    buzzer.innerText = "LOCKED";
+  }
+
+  // 6. Host clears the board for the next question
+  socket.on('clear_buzzers', () => {
+    resetBuzzer();
+  });
+
+  // 7. Reset visuals back to normal blue
+  function resetBuzzer() {
+    isLocked = false;
+    hasBuzzed = false;
+    const buzzer = document.getElementById('main-buzzer');
+    buzzer.classList.remove('buzzed', 'locked');
+    buzzer.innerText = "BUZZ";
+  }
+</script>
+</body>
+</html>
